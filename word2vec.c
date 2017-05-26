@@ -294,7 +294,10 @@ int AddWordToVocab(char *word) {
 
 // Used later for sorting by word counts
 int VocabCompare(const void *a, const void *b) {
-    return ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
+    int ret = ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
+    if (ret == 0) ret = strlen(((struct vocab_word *)b)->word) - strlen(((struct vocab_word *)a)->word);
+    if (ret == 0) ret = strcmp(((struct vocab_word *)a)->word, ((struct vocab_word *)b)->word);
+    return ret;
 }
 
 /**
@@ -469,9 +472,11 @@ void LearnVocabFromTrainFile() {
   
   // Populate the vocab table with -1s.
   for (a = 0; a < vocab_hash_size; a++) vocab_hash[a] = -1;
-  
-  // Open the training file.
-  fin = fopen(train_file, "rb");
+  if (!strcmp("-",train_file))
+    fin = stdin;
+  else
+  	// Open the training file.
+    fin = fopen(train_file, "rb");  
   if (fin == NULL) {
     printf("ERROR: training data file not found!\n");
     exit(1);
