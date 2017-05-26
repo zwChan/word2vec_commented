@@ -317,6 +317,7 @@ void SortVocab() {
    * occurrences to be at the end of the vocabulary table. This will allow us
    * to free the memory associated with the words that get filtered out.
    */
+   // Sort the vocabulary and keep </s> at the first position
   qsort(&vocab[1], vocab_size - 1, sizeof(struct vocab_word), VocabCompare);
   
   // Clear the vocabulary hash table.
@@ -331,6 +332,7 @@ void SortVocab() {
   // For every word currently in the vocab...
   for (a = 0; a < size; a++) {
     // If it occurs fewer than 'min_count' times, remove it from the vocabulary.
+	// Words occuring less than min_count times will be discarded from the vocab
     if ((vocab[a].cn < min_count) && (a != 0)) {
       // Decrease the size of the new vocabulary.
       vocab_size--;
@@ -977,9 +979,12 @@ void *TrainModelThread(void *id) {
           //   2. Calculate the error at the output, stored in 'g', by
           //      subtracting the network output from the desired output, 
           //      and finally multiply this by the learning rate.
-          if (f > MAX_EXP) g = (label - 1) * alpha;
-          else if (f < -MAX_EXP) g = (label - 0) * alpha;
+          if (f > MAX_EXP) g = (label - 1) * alpha;  // activation function result approximate to 1
+          else if (f < -MAX_EXP) g = (label - 0) * alpha; // approximate to 0
           else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha;
+          // the activation function is just before the output. I thought it was follow
+          // the hidden node before: input - syn0 - hidden - syn1 - activation - output
+          // g is negative if dot-product
           
           // Multiply the error by the output layer weights.
           // (I think this is the gradient calculation?)
@@ -1193,7 +1198,7 @@ int main(int argc, char **argv) {
   vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
   
   vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
-  expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
+  expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real)); // the lookup table for activation function (sigmoid)
   for (i = 0; i < EXP_TABLE_SIZE; i++) {
     expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
     expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
