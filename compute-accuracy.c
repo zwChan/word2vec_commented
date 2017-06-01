@@ -69,6 +69,8 @@ int main(int argc, char **argv)
   }
   fclose(f);
   TCN = 0;
+  // total number of question
+  // CCN: number that foud the correct answer for the 'best'
   while (1) {
     for (a = 0; a < N; a++) bestd[a] = 0;
     for (a = 0; a < N; a++) bestw[a][0] = 0;

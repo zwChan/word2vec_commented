@@ -52,6 +52,7 @@ struct vocab_word {
  *
  */
 char train_file[MAX_STRING], output_file[MAX_STRING];
+char dumpcv_file[MAX_STRING];
 char save_vocab_file[MAX_STRING], read_vocab_file[MAX_STRING];
 
 /*
@@ -610,15 +611,19 @@ void InitNet() {
     // Allocate the output layer of the network. 
     // The variable for this layer is 'syn1neg'.
     // This layer has the same size as the hidden layer, but is the transpose.
-    a = posix_memalign((void **)&syn1neg, 128, (long long)vocab_size * layer1_size * sizeof(real));
-    
-    if (syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
-    
-    // Set all of the weights in the output layer to 0.
-    for (a = 0; a < vocab_size; a++) for (b = 0; b < layer1_size; b++)
-     syn1neg[a * layer1_size + b] = 0;
+     if (use_position) {
+       a = posix_memalign((void **)&syn1neg, 128, (long long)vocab_size * layer1_size * sizeof(real) * window * 2);
+       if (syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
+       for (b = 0; b < layer1_size; b++) for (a = 0; a < vocab_size * window * 2; a++)
+           syn1neg[a * layer1_size + b] = 0;
+     } else {
+       a = posix_memalign((void **)&syn1neg, 128, (long long)vocab_size * layer1_size * sizeof(real));
+       if (syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
+       // Set all of the weights in the output layer to 0.
+       for (a = 0; a < vocab_size; a++) for (b = 0; b < layer1_size; b++)
+       syn1neg[a * layer1_size + b] = 0;
+     }
   }
-  
   // Randomly initialize the weights for the hidden layer (word vector layer).
   // TODO - What's the equation here?
   for (a = 0; a < vocab_size; a++) for (b = 0; b < layer1_size; b++) {
@@ -962,10 +967,11 @@ void *TrainModelThread(void *id) {
             // Mark this as a negative example.
             label = 0;
           }
-          
-          // Get the index of the target word in the output layer.
-          l2 = target * layer1_size;
-          
+          if (use_position > 0) {
+             l2 = ((a > window?a-1:a) + (window * 2 * target)) * layer1_size;
+          } else {
+             l2 = target * layer1_size;
+          }
           // At this point, our two words are represented by their index into
           // the layer weights.
           // l1 - The index of our input word within the hidden layer weights.
@@ -1030,7 +1036,7 @@ void *TrainModelThread(void *id) {
 void TrainModel() {
   long a, b, c, d;
   FILE *fo;
-  
+  FILE *fo2;
   pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
   
   printf("Starting training using file %s\n", train_file);
@@ -1064,14 +1070,22 @@ void TrainModel() {
   
   
   fo = fopen(output_file, "wb");
+  if (dumpcv_file[0] != 0) fo2 = fopen(dumpcv_file, "wb");
   if (classes == 0) {
     // Save the word vectors
     fprintf(fo, "%lld %lld\n", vocab_size, layer1_size);
+    if (dumpcv_file[0] != 0) fprintf(fo2, "%lld %lld\n", vocab_size, layer1_size);
     for (a = 0; a < vocab_size; a++) {
       fprintf(fo, "%s ", vocab[a].word);
       if (binary) for (b = 0; b < layer1_size; b++) fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, fo);
       else for (b = 0; b < layer1_size; b++) fprintf(fo, "%lf ", syn0[a * layer1_size + b]);
       fprintf(fo, "\n");
+      if (dumpcv_file[0] != 0) {
+         fprintf(fo2, "%s ", vocab[a].word);
+         if (binary) for (b = 0; b < layer1_size; b++) fwrite(&syn1neg[a * layer1_size + b], sizeof(real), 1, fo2);
+         else for (b = 0; b < layer1_size; b++) fprintf(fo2, "%lf ", syn1neg[a * layer1_size + b]);
+         fprintf(fo2, "\n");
+      }
     }
   } else {
     // Run K-means on the word vectors
@@ -1173,11 +1187,16 @@ int main(int argc, char **argv) {
     printf("\t\tThe vocabulary will be read from <file>, not constructed from the training data\n");
     printf("\t-cbow <int>\n");
     printf("\t\tUse the continuous bag of words model; default is 1 (use 0 for skip-gram model)\n");
+    printf("\t-dumpcv <filename>\n");
+    printf("\t\tDump the context vectors, in file <filename>\n");
+    printf("\t-pos 1\n");
+    printf("\t\tInclude sequence position information in context.\n");
     printf("\nExamples:\n");
     printf("./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -cbow 1 -iter 3\n\n");
     return 0;
   }
   output_file[0] = 0;
+  dumpcv_file[0] = 0;
   save_vocab_file[0] = 0;
   read_vocab_file[0] = 0;
   if ((i = ArgPos((char *)"-size", argc, argv)) > 0) layer1_size = atoi(argv[i + 1]);
@@ -1198,8 +1217,20 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-iter", argc, argv)) > 0) iter = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-min-count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-classes", argc, argv)) > 0) classes = atoi(argv[i + 1]);
-  
-  // Allocate the vocabulary table.
+  if ((i = ArgPos((char *)"-dumpcv", argc, argv)) > 0) strcpy(dumpcv_file, argv[i + 1]);
+  if ((i = ArgPos((char *)"-pos", argc, argv)) > 0) use_position = 1;
+  if (dumpcv_file[0] != 0 && negative == 0) {
+     printf("-dumpcv requires negative training.\n\n");
+     return 0;
+  };
+  if (dumpcv_file[0] != 0 && (use_position > 0)) {
+     printf("-dumpcv cannot run with use_position yet.\n\n");
+     return 0;
+  };
+  if ((hs > 0 || cbow > 0) && (use_position > 0)) {
+     printf("-use_position require skip-gram negative-sampling training.\n\n");
+     return 0;
+  };
   vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
   
   vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
