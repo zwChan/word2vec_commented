@@ -1,6 +1,6 @@
 import sys,os
 from collections import Counter
-import re
+import re,string
 import gzip
 if len(sys.argv) < 4:
    print (
@@ -11,7 +11,6 @@ if len(sys.argv) < 4:
    sys.exit(1)
 
 print (sys.argv)
-# amod(agents-7, anti-HIV-1-6)
 wc = Counter()
 thr = int(sys.argv[1])
 dir = sys.argv[2]
@@ -20,7 +19,8 @@ filter = sys.argv[4]
 
 def count(f):
    global wc
-   rWordExtract = re.compile( "(\\w+)\\((\\S+)-\\d+, (\\S+)-\\d+\\)")
+   # amod(agents-7, anti-HIV-1-6)
+   rWordExtract = re.compile("(\\w+)\\((\\S+)-\\d+, (\\S+)-\\d+\\)")
    i = 0
    for l in f.readlines():
       i += 1
@@ -30,6 +30,7 @@ def count(f):
       #print m
       if (len(m) > 0 and len(m[0]) == 3):
          rel,head,mod = m[0]
+         if len(head.strip(string.punctuation)) == 0 or len(mod.strip(string.punctuation))==0: continue
          wc.update((head.strip(),))
          wc.update((mod.strip(),))
 

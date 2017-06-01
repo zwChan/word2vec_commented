@@ -44,11 +44,10 @@ print >> sys.stderr,"vocab:",len(vocab)
 
 def transform(f,of):
    rWordExtract = re.compile( "(\\w+)\\((\\S+)-\\d+, (\\S+)-\\d+\\)")
-   i = 0
+   i = 1
    for l in f.readlines():
       if i % 100000 == 0: print >> sys.stderr,i
       m = rWordExtract.findall(l.strip())
-      #print m
       if (len(m) > 0 and len(m[0]) == 3):
          i += 1
          rel,head,mod = m[0]
@@ -60,8 +59,8 @@ def transform(f,of):
          if rel == 'adpmod': continue # this is the prep. we'll get there (or the PP is crappy)
          if rel == 'punct': continue
          if head not in vocab: continue
-         print head,"_".join((rel,mod))
-         print mod,"I_".join((rel,head))
+         # print head,"_".join((rel,mod))
+         # print mod,"I_".join((rel,head))
          of.write("%s %s_%s\n" % (head,rel,mod))
          of.write("%s %sI_%s\n" % (mod,rel,head))
 
