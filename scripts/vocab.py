@@ -16,16 +16,16 @@ thr = int(sys.argv[1])
 dir = sys.argv[2]
 outputFile= sys.argv[3]
 filter = sys.argv[4]
+wCnt = 0
 
 def count(f):
-   global wc
+   global wc,wCnt
    # amod(agents-7, anti-HIV-1-6)
    rWordExtract = re.compile("(\\w+)\\((\\S+)-\\d+, (\\S+)-\\d+\\)")
-   i = 0
    for l in f.readlines():
-      i += 1
-      if i % 1000000 == 0:
-         print >> sys.stderr,i,len(wc)
+      wCnt += 1
+      if wCnt % 1000000 == 0:
+         print >> sys.stderr,wCnt,len(wc)
       m = rWordExtract.findall(l.strip())
       #print m
       if (len(m) > 0 and len(m[0]) == 3):
