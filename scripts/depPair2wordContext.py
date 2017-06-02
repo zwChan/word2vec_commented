@@ -15,10 +15,10 @@ output:
 
 """
 print(sys.argv)
-if len(sys.argv) < 4:
+if len(sys.argv) < 5:
    print (
    """
-   args: vocab-file input-dir  output-dir filter-of-input-filename
+   args: vocab-file input-dir  output-dir filter-of-input-filename isRemoveInputfile
    """
    )
    sys.exit(1)
@@ -28,6 +28,7 @@ vocab_file = sys.argv[1]
 dir_in = sys.argv[2]
 filter = sys.argv[4]
 dir_out = sys.argv[3]
+isRemoveInputfile = bool(sys.argv[4])
 lower=True
 
 def read_vocab(fh):
@@ -81,6 +82,8 @@ def walk_dir(dir_in,func,filter,dir_out):
                with open(filePath,'r') as f:
                    with open(ofPath,'w+') as of:
                      func(f,of)
+            if isRemoveInputfile:
+                os.remove(filePath)
 
 walk_dir(dir_in, transform, filter, dir_out)
 
