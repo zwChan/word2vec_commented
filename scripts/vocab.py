@@ -47,7 +47,7 @@ def walk_dir(dir,func,filter):
         for name in files:
             filePath = os.path.join(root,name)
             if rfilter.match(filePath) is None: continue
-            print("processing: %s" %(filePath))
+            print >> sys.stderr, "processing: %s" %(filePath)
             if (filePath.endswith('.gz')):
                with gzip.open(filePath,'r') as f:
                   func(f)
