@@ -2,7 +2,7 @@ import sys,os
 from collections import Counter
 import re,string
 import gzip
-if len(sys.argv) < 4:
+if len(sys.argv) <= 4:
    print (
    """
    args: threshold   input-dir  output-path filter-of-input-filename

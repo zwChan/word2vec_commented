@@ -15,7 +15,7 @@ output:
 
 """
 print(sys.argv)
-if len(sys.argv) < 5:
+if len(sys.argv) <= 5:
    print (
    """
    args: vocab-file input-dir  output-dir filter-of-input-filename isRemoveInputfile
@@ -26,9 +26,9 @@ if len(sys.argv) < 5:
 
 vocab_file = sys.argv[1]
 dir_in = sys.argv[2]
-filter = sys.argv[4]
 dir_out = sys.argv[3]
-isRemoveInputfile = bool(sys.argv[4])
+filter = sys.argv[4]
+isRemoveInputfile = sys.argv[5] == 'true'
 lower=True
 
 def read_vocab(fh):
