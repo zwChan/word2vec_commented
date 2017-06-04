@@ -26,7 +26,7 @@ if len(sys.argv) <= 5:
 
 vocab_file = sys.argv[1]
 dir_in = sys.argv[2]
-dir_out = sys.argv[3]
+path_out = sys.argv[3]
 filter = sys.argv[4]
 isRemoveInputfile = sys.argv[5] == 'true'
 lower=True
@@ -66,24 +66,23 @@ def transform(f,of):
          of.write("%s %sI_%s\n" % (mod,rel,head))
 
 
-def walk_dir(dir_in,func,filter,dir_out):
+def walk_dir(dir_in,func,filter,path_out):
     rfilter = re.compile(filter)
-    for root, dirs, files in os.walk(dir_in, True):
-        for name in files:
-            filePath = os.path.join(root,name)
-            ofPath = os.path.join(dir_out,"wc_" + name)
-            if rfilter.match(filePath) is None: continue
-            print("processing: %s" %(filePath))
-            if (filePath.endswith('.gz')):
-               with gzip.open(filePath,'r') as f:
-                  with gzip.open(ofPath,'w+') as of:
-                     func(f,of)
-            else:
-               with open(filePath,'r') as f:
-                   with open(ofPath,'w+') as of:
-                     func(f,of)
-            if isRemoveInputfile:
-                os.remove(filePath)
+    with open(path_out,'w+') as of:
+        for root, dirs, files in os.walk(dir_in, True):
+            for name in files:
+                filePath = os.path.join(root,name)
+                ofPath = os.path.join(path_out,"wc_" + name)
+                if rfilter.match(filePath) is None: continue
+                print("processing: %s" %(filePath))
+                if (filePath.endswith('.gz')):
+                   with gzip.open(filePath,'r') as f:
+                      func(f,of)
+                else:
+                   with open(filePath,'r') as f:
+                       func(f,of)
+                if isRemoveInputfile:
+                    os.remove(filePath)
 
-walk_dir(dir_in, transform, filter, dir_out)
+walk_dir(dir_in, transform, filter, path_out)
 
