@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
   float M[10000];
   char vocab[max_w];
   if (argc < 2) {
-    printf("Usage: ./distance <binary-file>\nwhere FILE contains word projections in the BINARY FORMAT\nOutput to stdout.\n");
+    printf("Usage: ./bin2text <binary-file>\nwhere FILE contains word projections in the BINARY FORMAT\nOutput to stdout.\n");
     return 0;
   }
   strcpy(file_name, argv[1]);
@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
     fprintf(stdout,"\n");
   }
   fclose(f);
-
+  fflush(stdout);
+  fflush(stderr);
   return 0;
 }
