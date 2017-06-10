@@ -1,8 +1,10 @@
 import sys
 from infer import Embeddings
 
-questions = file("/home/yogo/exps/vectorregularities2/data/google-analogies")
-e = Embeddings.load(sys.argv[1])
+embeddingFile = sys.argv[1]
+analogiesFile = sys.argv[2]
+e = Embeddings.load(embeddingFile)
+questions = file(analogiesFile)
 
 for line in questions:
    cat, q1,q2,q3,a = line.lower().strip().split()
