@@ -28,10 +28,23 @@ int main(int argc, char **argv)
   FILE *f;
   char st1[max_size], st2[max_size], st3[max_size], st4[max_size], bestw[N][max_size], file_name[max_size], ch;
   float dist, len, bestd[N], vec[max_size];
-  long long words, size, a, b, c, d, b1, b2, b3, threshold = 0;
+  long long words, size, // vocab size, vector size
+  	  a, b, c, d, // index variables
+	  b1, b2, b3,  // words in question
+	  threshold = 0;
   float *M;
   char *vocab;
-  int TCN, CCN = 0, TACN = 0, CACN = 0, SECN = 0, SYCN = 0, SEAC = 0, SYAC = 0, QID = 0, TQ = 0, TQS = 0;
+  int TCN, // tested question in current class
+  	  	  CCN = 0,  // matched question in current class
+		  TACN = 0, // accumulated tested question
+		  CACN = 0, // accumulated matched question
+		  SECN = 0, // tested semantic question
+		  SYCN = 0, // tested syntax question
+		  SEAC = 0, // accumulated matched semantic question
+		  SYAC = 0, // accumulated matched semantic question
+		  QID = 0,  // question classes id
+		  TQ = 0, // total number of question
+		  TQS = 0; // total number of question seem (all words is in the vocabulary)
   if (argc < 2) {
     printf("Usage: ./compute-accuracy <FILE> <threshold>\nwhere FILE contains word projections, and threshold is used to reduce vocabulary of the model for fast approximate evaluation (0 = off, otherwise typical value is 30000)\n");
     return 0;
@@ -106,13 +119,16 @@ int main(int argc, char **argv)
     for (a = 0; a < N; a++) bestd[a] = 0;
     for (a = 0; a < N; a++) bestw[a][0] = 0;
     TQ++;
+    // if any of the words is not in the vocab, the question is not 'seem'
     if (b1 == words) continue;
     if (b2 == words) continue;
     if (b3 == words) continue;
     for (b = 0; b < words; b++) if (!strcmp(&vocab[b * max_w], st4)) break;
     if (b == words) continue;
+    // compute the target vector
     for (a = 0; a < size; a++) vec[a] = (M[a + b2 * size] - M[a + b1 * size]) + M[a + b3 * size];
     TQS++;
+    // find the 'best'/'closest' vector for the target vector.
     for (c = 0; c < words; c++) {
       if (c == b1) continue;
       if (c == b2) continue;
