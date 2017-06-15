@@ -547,6 +547,10 @@ void LearnVocabFromTrainFile() {
 void SaveVocab() {
   long long i;
   FILE *fo = fopen(save_vocab_file, "wb");
+  if (!fo){
+	  fprintf(stderr,"vocab file %s can't be opened.", save_vocab_file);
+	  return;
+  }
   for (i = 0; i < vocab_size; i++) fprintf(fo, "%s %lld\n", vocab[i].word, vocab[i].cn);
   fclose(fo);
 }
