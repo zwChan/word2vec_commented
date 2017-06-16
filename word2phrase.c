@@ -282,6 +282,7 @@ void showPhrase () {
 	long long i, showN = showNumber;
 	for (i=0; i < vocab_size; i++) {
 		if (showN == 0) break;
+		if (vocab[i].isPhrase == 0) continue;
 		printf("%s\t%lld\n",vocab[i].word, vocab[i].cn);
 		if (showN > 0) showN--;
 	}
