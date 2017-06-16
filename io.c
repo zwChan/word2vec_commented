@@ -6,7 +6,7 @@ void ReadWord(char *word, FILE *fin, int MAX_STRING) {
   int a = 0, ch;
   while (!feof(fin)) {
     ch = fgetc(fin);
-    if (ch == 13) continue;
+    if (ch == 13 || ch > 0x7f) continue;
     if ((ch == ' ') || (ch == '\t') || (ch == '\n')) {
       if (a > 0) break;
       else continue; 

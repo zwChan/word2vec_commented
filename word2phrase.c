@@ -47,7 +47,7 @@ void ReadWord(char *word, FILE *fin) {
   int a = 0, ch; // a is the position of the char in the current word; ch is the current char
   while (!feof(fin)) {
     ch = fgetc(fin);
-    if (ch == 13) continue;
+    if (ch == 13 || ch > 0x7f) continue;
     if ((ch == ' ') || (ch == '\t') || (ch == '\n')) {
       if (a > 0) {
         if (ch == '\n') ungetc(ch, fin);
