@@ -202,7 +202,7 @@ void LearnVocabFromTrainFile() {
     strcpy(last_word, word);
     i = SearchVocab(bigram_word);
     if (i == -1) {
-      a = AddWordToVocab(bigram_word, 1);
+      a = AddWordToVocab(bigram_word, 0);
       vocab[a].cn = 1;
     } else vocab[i].cn++;
     if (vocab_size > vocab_hash_size * 0.7) ReduceVocab();
@@ -257,6 +257,7 @@ void TrainModel() {
     if (oov) score = 0; else score = (pab - min_count) / (real)pa / (real)pb * (real)train_words;
     if (score > threshold) {
       fprintf(fo, "_%s", word);
+      if (i>0) vocab[i].isPhrase = 1;
       pb = 0;
     } else fprintf(fo, " %s", word);
     pa = pb;
