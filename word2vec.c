@@ -161,12 +161,12 @@ void ReadWord(char *word, FILE *fin) {
     
     // ASCII Character 13 is a carriage return 'CR' whereas character 10 is 
     // newline or line feed 'LF'.
-    if (ch == 13) continue;
+    if (ch == 13 || ch > 0x7f) continue;
     
     // Check for word boundaries...
     if ((ch == ' ') || (ch == '\t') || (ch == '\n')) {
       // If the word has at least one character, we're done.
-      // Put the newline back before returning... (TODO - Why?)
+      // Put the newline back before returning...
       if (a > 0) {
         if (ch == '\n') ungetc(ch, fin);
         break;
