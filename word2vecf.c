@@ -51,8 +51,8 @@ real *syn0, *syn1, *syn1neg, *expTable;
 clock_t start;
 int numiters = 1;
 
-struct vocabulary *wv;
-struct vocabulary *cv;
+struct vocabulary_f *wv;
+struct vocabulary_f *cv;
 
 int negative = 15;
 const int table_size = 1e8;
@@ -75,7 +75,7 @@ long long GetFileSize(char *fname) {
 // Used for sampling of negative examples.
 // wc[i] == the count of context number i
 // wclen is the number of entries in wc (context vocab size)
-void InitUnigramTable(struct vocabulary *v) {
+void InitUnigramTable(struct vocabulary_f *v) {
   int a, i;
   long long normalizer = 0;
   real d1, power = 0.75;
@@ -93,7 +93,7 @@ void InitUnigramTable(struct vocabulary *v) {
   }
 }
 
-void InitNet(struct vocabulary *wv, struct vocabulary *cv) {
+void InitNet(struct vocabulary_f *wv, struct vocabulary_f *cv) {
    long long a, b;
    a = posix_memalign((void **)&syn0, 128, (long long)wv->vocab_size * layer1_size * sizeof(real));
    if (syn0 == NULL) {printf("Memory allocation failed\n"); exit(1);}
@@ -154,8 +154,8 @@ void *TrainModelThread(void *id) {
         if (feof(fi) || ftell(fi) > end_offset) break;
         for (c = 0; c < layer1_size; c++) neu1[c] = 0;
         for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
-        wrdi = ReadWordIndex(wv, fi);
-        ctxi = ReadWordIndex(cv, fi);
+        wrdi = ReadWordIndex_f(wv, fi);
+        ctxi = ReadWordIndex_f(cv, fi);
         word_count++; //TODO ?
         if (wrdi < 0 || ctxi < 0) continue;
 
@@ -313,8 +313,8 @@ void TrainModel() {
   pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
   printf("Starting training using file %s\n", train_file);
   starting_alpha = alpha;
-  wv = ReadVocab(wvocab_file);
-  cv = ReadVocab(cvocab_file);
+  wv = ReadVocab_f(wvocab_file);
+  cv = ReadVocab_f(cvocab_file);
   InitNet(wv, cv);
   InitUnigramTable(cv);
   start = clock();

@@ -48,45 +48,45 @@ void LearnVocabFromTrainFile() {
   char context[MAX_STRING];
   FILE *fin;// = stdin;
   long long a, i;
-  struct vocabulary *wv = CreateVocabulary();
-  struct vocabulary *cv = CreateVocabulary();
+  struct vocabulary_f *wv = CreateVocabulary_f();
+  struct vocabulary_f *cv = CreateVocabulary_f();
   fin = fopen(train_file, "rb");
   if (fin == NULL) {
     printf("ERROR: training data file not found!\n");
     exit(1);
   }
   while (1) {
-    ReadWord(word, fin, MAX_STRING);
-    ReadWord(context, fin, MAX_STRING);
+    ReadWord_f(word, fin, MAX_STRING);
+    ReadWord_f(context, fin, MAX_STRING);
     if (feof(fin)) break;
     train_words++;
     if ((debug_mode > 1) && (train_words % 1000000 == 0)) {
       printf("%lldK%c", train_words / 1000, 13);
       fflush(stdout);
     }
-    i = SearchVocab(wv,word);
+    i = SearchVocab_f(wv,word);
     if (i == -1) {
-      a = AddWordToVocab(wv,word);
+      a = AddWordToVocab_f(wv,word);
       wv->vocab[a].cn = 1;
     } else wv->vocab[i].cn++;
 
-    i = SearchVocab(cv,context);
+    i = SearchVocab_f(cv,context);
     if (i == -1) {
-      a = AddWordToVocab(cv,context);
+      a = AddWordToVocab_f(cv,context);
       cv->vocab[a].cn = 1;
     } else cv->vocab[i].cn++;
 
-    EnsureVocabSize(wv);
-    EnsureVocabSize(cv);
+    EnsureVocabSize_f(wv);
+    EnsureVocabSize_f(cv);
   }
-  SortAndReduceVocab(wv,min_count);
-  SortAndReduceVocab(cv,min_count);
+  SortAndReduceVocab_f(wv,min_count);
+  SortAndReduceVocab_f(cv,min_count);
   printf("WVocab size: %lld\n", wv->vocab_size);
   printf("CVocab size: %lld\n", cv->vocab_size);
   printf("Words in train file: %lld\n", train_words);
   fclose(fin);
-  SaveVocab(wv, wvocab_file);
-  SaveVocab(cv, cvocab_file);
+  SaveVocab_f(wv, wvocab_file);
+  SaveVocab_f(cv, cvocab_file);
   
   /////////////////////////////
   /*

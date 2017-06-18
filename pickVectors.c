@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
   float *M;
   char *vocab;
   char  pickWord[max_size];
-  struct vocabulary *wv = CreateVocabulary();
+  struct vocabulary_f *wv = CreateVocabulary_f();
 
   if (argc < 3) {
     printf("Usage: ./pickVectors <binary-file>\nwhere FILE contains word projections in the BINARY FORMAT\n"
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
   // build vocabulary for the chosen word
   while (EOF != fscanf(wf, "%s\n", pickWord)) {
-	  AddWordToVocab(wv,pickWord);
+	  AddWordToVocab_f(wv,pickWord);
   }
   fprintf(stderr,"chosen words number is %lld\n", wv->vocab_size);
   fclose(wf);
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
       if ((a < max_w) && (vocab[cnt*max_w + a] != '\n')) a++;
     }
     vocab[cnt*max_w + a] = 0;
-    d = SearchVocab(wv,&vocab[cnt*max_w]);
+    d = SearchVocab_f(wv,&vocab[cnt*max_w]);
     if (d >= 0) {
     	wv->vocab[d].cn += 10000; // add a big enough number to indicate it was found
     	for (a = 0; a < size; a++) fread(&M[a + cnt * size], sizeof(float), 1, f);
