@@ -199,12 +199,12 @@ void LearnVocabFromTrainFile() {
     } else vocab[i].cn++;
     if (start) continue;
     // only make the phase with 'N' or 'G' tag in the last word
-    if (tag_enable == 0) {
+    if (tag_enable == 1) {
     	if (word[0]==0 || last_word[0]==0 ||word[1]!='|' || last_word[1]!='|') {
 			// tag disable; anyone have no tag;
 			continue;
     	}
-    	char *tag = strrch(last_word,'|');
+    	char *tag = strrchr(last_word,'|');
     	if (tag == 0 || tag <= last_word) {
     		// no tag or '|' is the first char.
     		continue;
