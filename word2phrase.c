@@ -39,6 +39,7 @@ long long vocab_max_size = 10000, vocab_size = 0;
 long long train_words = 0;
 real threshold = 100;
 long long showNumber = 100;
+int tag_enable = 0;
 
 unsigned long long next_random = 1;
 
@@ -197,6 +198,22 @@ void LearnVocabFromTrainFile() {
       vocab[a].cn = 1;
     } else vocab[i].cn++;
     if (start) continue;
+    // only make the phase with 'N' or 'G' tag in the last word
+    if (tag_enable == 0) {
+    	if (word[0]==0 || last_word[0]==0 ||word[1]!='|' || last_word[1]!='|') {
+			// tag disable; anyone have no tag;
+			continue;
+    	}
+    	char *tag = strrch(last_word,'|');
+    	if (tag == 0 || tag <= last_word) {
+    		// no tag or '|' is the first char.
+    		continue;
+    	}
+    	if (*(tag-1) != 'N' || *(tag-1) != 'G') {
+    		// last tag is not 'N' or 'G'
+    		continue;
+    	}
+    }
     sprintf(bigram_word, "%s_%s", last_word, word);
     bigram_word[MAX_STRING - 1] = 0;
     strcpy(last_word, word);
@@ -303,8 +320,10 @@ int main(int argc, char **argv) {
     printf("\t\tThis will discard words that appear less than <int> times; default is 5\n");
     printf("\t-threshold <float>\n");
     printf("\t\t The <float> value represents threshold for forming the phrases (higher means less phrases); default 100\n");
-    printf("\t-showNumber <float>\n");
+    printf("\t-showNumber <int>\n");
     printf("\t\t The <int> value represents the number of phrase are printed, by frequency descent descendant; default 100\n");
+    printf("\t-tag-enable <int>\n");
+    printf("\t\t The <int> value indicates if enable tag in the begining of the word; default 0\n");
     printf("\t-debug <int>\n");
     printf("\t\tSet the debug mode (default = 2 = more info during training)\n");
     printf("\nExamples:\n");
@@ -317,6 +336,7 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-min-count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-threshold", argc, argv)) > 0) threshold = atof(argv[i + 1]);
   if ((i = ArgPos((char *)"-showNumber", argc, argv)) > 0) showNumber = atoll(argv[i + 1]);
+  if ((i = ArgPos((char *)"-tag-enable", argc, argv)) > 0) tag_enable = atoll(argv[i + 1]);
   vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
   vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
   TrainModel();
