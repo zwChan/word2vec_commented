@@ -303,6 +303,7 @@ int ArgPos(char *str, int argc, char **argv) {
 // show the phrase by frequency from high to low
 void showPhrase () {
 	long long i, showN = showNumber;
+	SortVocab();
 	for (i=0; i < vocab_size; i++) {
 		if (showN == 0) break;
 		if (vocab[i].isPhrase == 0) continue;
