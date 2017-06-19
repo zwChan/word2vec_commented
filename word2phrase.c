@@ -28,6 +28,7 @@ struct vocab_word {
   long long cn;
   char *word;
   int isPhrase;
+  int score; // score of the phrase
 };
 
 char train_file[MAX_STRING], output_file[MAX_STRING];
@@ -115,7 +116,8 @@ int AddWordToVocab(char *word, int isPhrase) {
 
 // Used later for sorting by word counts; if ties, longer word first; if ties, compare the word
 int VocabCompare(const void *a, const void *b) {
-    int ret = ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
+    int ret = ((struct vocab_word *)b)->score - ((struct vocab_word *)a)->score;
+    if (ret == 0) ret = ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
     if (ret == 0) ret = strlen(((struct vocab_word *)b)->word) - strlen(((struct vocab_word *)a)->word);
     if (ret == 0) ret = strcmp(((struct vocab_word *)a)->word, ((struct vocab_word *)b)->word);
     return ret;
@@ -189,8 +191,8 @@ void LearnVocabFromTrainFile() {
     } else start = 0;
     train_words++;
     if ((debug_mode > 1) && (train_words % 100000 == 0)) {
-      printf("Words processed: %lldK     Vocab size: %lldK  %c", train_words / 1000, vocab_size / 1000, 13);
-      fflush(stdout);
+      fprintf(stderr,"Words processed: %lldK     Vocab size: %lldK  %c", train_words / 1000, vocab_size / 1000, 13);
+      //fflush(stdout);
     }
     i = SearchVocab(word);
     if (i == -1) {
@@ -257,8 +259,8 @@ void TrainModel() {
     }
     cn++;
     if ((debug_mode > 1) && (cn % 100000 == 0)) {
-      printf("Words written: %lldK%c", cn / 1000, 13);
-      fflush(stdout);
+      fprintf(stderr,"Words written: %lldK%c", cn / 1000, 13);
+      //fflush(stdout);
     }
     oov = 0;
     i = SearchVocab(word);
@@ -274,7 +276,10 @@ void TrainModel() {
     if (oov) score = 0; else score = (pab - min_count) / (real)pa / (real)pb * (real)train_words;
     if (score > threshold) {
       fprintf(fo, "_%s", word);
-      if (i>0) vocab[i].isPhrase = 1;
+      if (i>0) {
+    	  vocab[i].isPhrase = 1;
+    	  vocab[i].score = (int)score;
+      }
       pb = 0;
     } else fprintf(fo, " %s", word);
     pa = pb;
@@ -301,7 +306,7 @@ void showPhrase () {
 	for (i=0; i < vocab_size; i++) {
 		if (showN == 0) break;
 		if (vocab[i].isPhrase == 0) continue;
-		printf("%s\t%lld\n",vocab[i].word, vocab[i].cn);
+		printf("%s\t%lld\t%d\n",vocab[i].word, vocab[i].cn, vocab[i].score);
 		if (showN > 0) showN--;
 	}
 	fflush(stdout);
