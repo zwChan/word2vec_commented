@@ -81,8 +81,8 @@ void LearnVocabFromTrainFile() {
   }
   SortAndReduceVocab_f(wv,min_count);
   SortAndReduceVocab_f(cv,min_count);
-  printf("WVocab size: %lld\n", wv->vocab_size);
-  printf("CVocab size: %lld\n", cv->vocab_size);
+  printf("WVocab size: %ld\n", wv->vocab_size);
+  printf("CVocab size: %ld\n", cv->vocab_size);
   printf("Words in train file: %lld\n", train_words);
   fclose(fin);
   SaveVocab_f(wv, wvocab_file);

@@ -26,9 +26,9 @@ int main(int argc, char **argv) {
   FILE *f,*wf;
   //char st1[max_size];
   //char *bestw[N];
-  char ifile_name[max_size],wfile_name[max_size], st[100][max_size];
+  char ifile_name[max_size],wfile_name[max_size];
   //float dist, len, bestd[N], vec[max_size];
-  long long words, size, a, b, c, d, cn, bi[100],cnt;
+  long long words, size, a, b, d,cnt;
   //char ch;
   float *M;
   char *vocab;
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   while (EOF != fscanf(wf, "%s\n", pickWord)) {
 	  AddWordToVocab_f(wv,pickWord);
   }
-  fprintf(stderr,"chosen words number is %lld\n", wv->vocab_size);
+  fprintf(stderr,"chosen words number is %ld\n", wv->vocab_size);
   fclose(wf);
 
   fscanf(f, "%lld", &words);
@@ -82,13 +82,13 @@ int main(int argc, char **argv) {
     }else{
     	// skip this vector
     	float tmp;
-    	//for (a = 0; a < size; a++) fread(&tmp, sizeof(float), 1, f);
-    	for (a = 0; a < size; a++) fread(&M[a + cnt * size], sizeof(float), 1, f);
+    	for (a = 0; a < size; a++) fread(&tmp, sizeof(float), 1, f);
+    	//for (a = 0; a < size; a++) fread(&M[a + cnt * size], sizeof(float), 1, f);
     }
   }
   fclose(f);
 
-  fprintf(stderr,"Found words number is %d\n", cnt);
+  fprintf(stderr,"Found words number is %lld\n", cnt);
 
   fprintf(stdout,"%lld %lld\n",cnt,size);
   for (b=0; b<cnt; b++) {
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 		  b ++;
 		  fprintf(stderr,"%s\n", wv->vocab[a].word);
 	  }
-	  fprintf(stderr,"total %d not found, found %d, all %d\n", b, cnt, wv->vocab_size);
+	  fprintf(stderr,"total %lld not found, found %lld, all %ld\n", b, cnt, wv->vocab_size);
   }
   fflush(stdout);
   fflush(stderr);

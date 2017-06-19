@@ -132,7 +132,7 @@ void *TrainModelThread(void *id) {
      fseek(fi, start_offset, SEEK_SET);
      // if not binary:
      while (fgetc(fi) != '\n') { }; //TODO make sure its ok
-     printf("thread %d %lld\n", id, ftell(fi));
+     printf("thread %lld %ld\n", (long long)id, ftell(fi));
 
      long long train_words = wv->word_count;
      while (1) { //HERE @@@
@@ -325,7 +325,7 @@ void TrainModel() {
     // Save the word vectors
     if (dumpcv_file[0] != 0) {
         fo2 = fopen(dumpcv_file, "wb");
-        fprintf(fo2, "%d %d\n", cv->vocab_size, layer1_size);
+        fprintf(fo2, "%ld %lld\n", cv->vocab_size, layer1_size);
         for (a = 0; a < cv->vocab_size; a++) {
            fprintf(fo2, "%s ", cv->vocab[a].word); //TODO
            if (binary) for (b = 0; b < layer1_size; b++) fwrite(&syn1neg[a * layer1_size + b], sizeof(real), 1, fo2);
@@ -333,7 +333,7 @@ void TrainModel() {
            fprintf(fo2, "\n");
        }
     }
-    fprintf(fo, "%d %d\n", wv->vocab_size, layer1_size);
+    fprintf(fo, "%ld %lld\n", wv->vocab_size, layer1_size);
     for (a = 0; a < wv->vocab_size; a++) {
       fprintf(fo, "%s ", wv->vocab[a].word); //TODO
       if (binary) for (b = 0; b < layer1_size; b++) fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, fo);
@@ -349,7 +349,7 @@ void TrainModel() {
     real *cent = (real *)calloc(classes * layer1_size, sizeof(real));
     for (a = 0; a < wv->vocab_size; a++) cl[a] = a % clcn;
     for (a = 0; a < iter; a++) {
-       printf("kmeans iter %d\n", a);
+       printf("kmeans iter %ld\n", a);
       for (b = 0; b < clcn * layer1_size; b++) cent[b] = 0;
       for (b = 0; b < clcn; b++) centcn[b] = 1;
       for (c = 0; c < wv->vocab_size; c++) {

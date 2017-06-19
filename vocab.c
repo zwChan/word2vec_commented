@@ -214,7 +214,7 @@ struct vocabulary_f *ReadVocab_f(char *vocabfile) {
     i++;
   }
   SortAndReduceVocab_f(v, 0);
-  printf("Vocab size: %d\n", v->vocab_size);
+  printf("Vocab size: %ld\n", v->vocab_size);
   printf("Word count: %lld\n", v->word_count);
   return v;
 }
