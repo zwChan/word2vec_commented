@@ -40,7 +40,7 @@ long long vocab_max_size = 10000, vocab_size = 0;
 long long train_words = 0;
 real threshold = 100;
 long long showNumber = 100;
-int tag_enable = 0;
+int tag_ratio = 0;
 
 unsigned long long next_random = 1;
 
@@ -201,7 +201,7 @@ void LearnVocabFromTrainFile() {
     } else vocab[i].cn++;
     if (start) continue;
     // only make the phase with 'N' or 'G' tag in the last word
-    if (tag_enable == 1) {
+    if (tag_ratio == 1) {
     	if (word[0]==0 || last_word[0]==0 ||word[1]!='|' || last_word[1]!='|') {
 			// tag disable; anyone have no tag;
 			continue;
@@ -342,7 +342,7 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-min-count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-threshold", argc, argv)) > 0) threshold = atof(argv[i + 1]);
   if ((i = ArgPos((char *)"-showNumber", argc, argv)) > 0) showNumber = atoll(argv[i + 1]);
-  if ((i = ArgPos((char *)"-tag-enable", argc, argv)) > 0) tag_enable = atoll(argv[i + 1]);
+  if ((i = ArgPos((char *)"-tag-enable", argc, argv)) > 0) tag_ratio = atoll(argv[i + 1]);
   vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
   vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
   TrainModel();

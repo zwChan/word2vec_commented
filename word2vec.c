@@ -91,7 +91,7 @@ long long vocab_max_size = 1000, vocab_size = 0, layer1_size = 100;
 /*
  *
  */
-long long train_words = 0, word_count_actual = 0, iter = 5, file_size = 0, classes = 0, dumpcv = 0;
+long long train_words = 0, word_count_actual = 0, iter = 5, file_size = 0, classes = 0, dumpcv = 0, tag_ratio = 0;
 
 /*
  * ======== alpha ========
@@ -242,11 +242,26 @@ int SearchVocab(char *word) {
  * Reads the next word from the training file, and returns its index into the
  * 'vocab' table.
  */
-int ReadWordIndex(FILE *fin) {
+int ReadWordIndex(FILE *fin, long long *cn) {
   char word[MAX_STRING];
+  char tag[] = "</N>";
+  int index;
+  word[0] = 0;
   ReadWord(word, fin);
   if (feof(fin)) return -1;
-  return SearchVocab(word);
+  index = SearchVocab(word);
+  if (tag_ratio) {
+	  int r = rand();
+	  if (index < 0 || r%100 < tag_ratio) {
+		  if (word[0] != 0 && word[1]== '|') {
+			  tag[2] = word[0];
+			  if (index > 0)
+			  	  *cn = vocab[index].cn;
+			  index = SearchVocab(tag);
+		  }
+	  }
+  }
+  return index;
 }
 
 /**
@@ -294,9 +309,24 @@ int AddWordToVocab(char *word) {
 }
 
 // Used later for sorting by word counts
+#define isTag(a) ((a)[0]=='<' && (a)[1]=='/' && (a)[3]=='>' && (a)[4]=='\0')
 int VocabCompare(const void *a, const void *b) {
-    int ret = ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
-    if (ret == 0) ret = strlen(((struct vocab_word *)b)->word) - strlen(((struct vocab_word *)a)->word);
+    int ret = 0;
+    int alen = strlen(((struct vocab_word *)a)->word);
+    int blen = strlen(((struct vocab_word *)b)->word);
+    if (tag_ratio) {
+    	// 4 is len of tag
+    	if (alen == 4 && blen==4 && isTag(((struct vocab_word *)a)->word)
+    		&& isTag(((struct vocab_word *)b)->word)) {
+    			return ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
+    		}else if (alen == 4 && isTag(((struct vocab_word *)a)->word)) {
+    			return -1;
+    		}else if (blen == 4 && isTag(((struct vocab_word *)b)->word)) {
+    			return 1;
+    		}
+    }
+    if (ret == 0) ret = ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
+    if (ret == 0) ret = blen - alen;
     if (ret == 0) ret = strcmp(((struct vocab_word *)a)->word, ((struct vocab_word *)b)->word);
     return ret;
 }
@@ -521,6 +551,16 @@ void LearnVocabFromTrainFile() {
     // If it's already in the vocab, just increment the word count.
     } else vocab[i].cn++;
     
+    // add tag </?>
+    if(tag_ratio && word[0] != 0 && word[1]=='|') {
+    	word[4] = 0; word[3]='>';word[2]=word[0]; word[1]='/';word[0]='<';
+        i = SearchVocab(word);
+        if (i == -1) {
+          a = AddWordToVocab(word);
+          vocab[a].cn = 1;
+        } else vocab[i].cn++;
+    }
+
     // If the vocabulary has grown too large, trim out the most infrequent 
     // words. The vocabulary is considered "too large" when it's filled more
     // than 70% of the hash table (this is to try and keep hash collisions
@@ -694,7 +734,8 @@ void *TrainModelThread(void *id) {
       while (1) {
         // Read the next word from the training data and lookup its index in 
         // the vocab table. 'word' is the word's vocab index.
-        word = ReadWordIndex(fi);
+    	long long org_cn = -1;
+        word = ReadWordIndex(fi, &org_cn);
         
         if (feof(fi)) break;
         
@@ -707,6 +748,7 @@ void *TrainModelThread(void *id) {
         // 'vocab' word 0 is a special token "</s>" which indicates the end of 
         // a sentence.
         if (word == 0) break;
+        if (org_cn < 0) org_cn = vocab[word].cn;
         
         /* 
          * =================================
@@ -753,7 +795,7 @@ void *TrainModelThread(void *id) {
          */
         if (sample > 0) {
           // Calculate the probability of keeping 'word'.
-          real ran = (sqrt(vocab[word].cn / (sample * train_words)) + 1) * (sample * train_words) / vocab[word].cn;
+          real ran = (sqrt(org_cn / (sample * train_words)) + 1) * (sample * train_words) / org_cn;
           
           // Generate a random number.
           // The multiplier is 25.xxx billion, so 'next_random' is a 64-bit integer.
@@ -1040,7 +1082,7 @@ void *TrainModelThread(void *id) {
 void TrainModel() {
   long a, b, c, d;
   FILE *fo;
-  FILE *fo2;
+  FILE *fo2=NULL;
   pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
   
   printf("Starting training using file %s\n", train_file);
@@ -1084,7 +1126,7 @@ void TrainModel() {
       if (binary) for (b = 0; b < layer1_size; b++) fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, fo);
       else for (b = 0; b < layer1_size; b++) fprintf(fo, "%lf ", syn0[a * layer1_size + b]);
       fprintf(fo, "\n");
-      if (dumpcv_file[0] != 0) {
+      if (fo2) {
          fprintf(fo2, "%s ", vocab[a].word);
          if (binary) for (b = 0; b < layer1_size; b++) fwrite(&syn1neg[a * layer1_size + b], sizeof(real), 1, fo2);
          else for (b = 0; b < layer1_size; b++) fprintf(fo2, "%lf ", syn1neg[a * layer1_size + b]);
@@ -1195,6 +1237,8 @@ int main(int argc, char **argv) {
     printf("\t\tDump the context vectors, in file <filename>\n");
     printf("\t-pos 1\n");
     printf("\t\tInclude sequence position information in context.\n");
+    printf("\t-tag-ratio <int>\n");
+    printf("\t\t The <int> value indicates the percent of tag replace the word in training; default 0\n");
     printf("\nExamples:\n");
     printf("./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -cbow 1 -iter 3\n\n");
     return 0;
@@ -1223,6 +1267,7 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-classes", argc, argv)) > 0) classes = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-dumpcv", argc, argv)) > 0) strcpy(dumpcv_file, argv[i + 1]);
   if ((i = ArgPos((char *)"-pos", argc, argv)) > 0) use_position = 1;
+  if ((i = ArgPos((char *)"-tag-ratio", argc, argv)) > 0) tag_ratio = atoll(argv[i + 1]);
   if (dumpcv_file[0] != 0 && negative == 0) {
      printf("-dumpcv requires negative training.\n\n");
      return 0;
