@@ -242,7 +242,7 @@ int SearchVocab(char *word) {
  * Reads the next word from the training file, and returns its index into the
  * 'vocab' table.
  */
-int ReadWordIndex(FILE *fin, long long *cn) {
+int ReadWordIndex(FILE *fin, long long rn, long long *cn) {
   char word[MAX_STRING];
   char tag[] = "</N>";
   int index;
@@ -251,8 +251,7 @@ int ReadWordIndex(FILE *fin, long long *cn) {
   if (feof(fin)) return -1;
   index = SearchVocab(word);
   if (tag_ratio) {
-	  int r = rand();
-	  if (index < 0 || r%100 < tag_ratio) {
+	  if (index < 0 || rn%100 < tag_ratio) {
 		  if (word[0] != 0 && word[1]== '|') {
 			  tag[2] = word[0];
 			  if (index > 0)
@@ -732,10 +731,14 @@ void *TrainModelThread(void *id) {
     // TODO - Under what condition would sentence_length not be zero?
     if (sentence_length == 0) {
       while (1) {
-        // Read the next word from the training data and lookup its index in 
+    	// Generate a random number.
+	    // The multiplier is 25.xxx billion, so 'next_random' is a 64-bit integer.
+	    next_random = next_random * (unsigned long long)25214903917 + 11;
+
+    	  // Read the next word from the training data and lookup its index in
         // the vocab table. 'word' is the word's vocab index.
     	long long org_cn = -1;
-        word = ReadWordIndex(fi, &org_cn);
+        word = ReadWordIndex(fi, next_random, &org_cn);
         
         if (feof(fi)) break;
         
@@ -797,10 +800,6 @@ void *TrainModelThread(void *id) {
           // Calculate the probability of keeping 'word'.
           real ran = (sqrt(org_cn / (sample * train_words)) + 1) * (sample * train_words) / org_cn;
           
-          // Generate a random number.
-          // The multiplier is 25.xxx billion, so 'next_random' is a 64-bit integer.
-          next_random = next_random * (unsigned long long)25214903917 + 11;
-
           // If the probability is less than a random fraction, discard the word.
           //
           // (next_random & 0xFFFF) extracts just the lower 16 bits of the 
